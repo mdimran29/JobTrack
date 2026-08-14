@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  TECHNICAL
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  ONSITE
+  BEHAVIORAL
+  FINAL
+  OTHER
+}
+
+enum InterviewOutcome {
+  PENDING
+  PASSED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  skills            String[] @default([])
+  yearsOfExperience Int?
+
+  applications JobApplication[]
+  resumeVersions ResumeVersion[]
+  matchHistory  MatchHistory[]
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  content   String
+  matchHistory MatchHistory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model MatchHistory {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeVersionId String?
+  resumeVersion  ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+
+  companyName    String
+  jobTitle       String
+  jobDescription String
+  result         Json
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([resumeVersionId])
+}
+
+model JobApplication {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  company      String
+  position     String
+  jobUrl       String?
+  location     String?
+  status       ApplicationStatus @default(APPLIED)
+  appliedDate  DateTime
+  salaryMin    Int?
+  salaryMax    Int?
+  source       String?
+  followUpDate DateTime?
+
+  interviews Interview[]
+  notes      Note[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, followUpDate])
+  @@index([userId, appliedDate])
+}
+
+model Interview {
+  id            String         @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  type            InterviewType
+  scheduledAt     DateTime
+  durationMinutes Int?
+  interviewerName String?
+  mode            String?
+  outcome         InterviewOutcome @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicationId])
+}
+
+model Note {
+  id            String         @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicationId])
+}

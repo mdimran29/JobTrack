@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+@theme {
+  /* Type */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Neutrals — cool, blue-graphite undertone (not default gray) */
+  --color-ink-950: #0a0c11;
+  --color-ink-900: #12141c;
+  --color-ink-800: #1a1d28;
+  --color-ink-700: #262a38;
+  --color-ink-600: #3a3f52;
+  --color-ink-500: #5b6072;
+  --color-ink-400: #7d8296;
+  --color-ink-300: #a4a8b8;
+
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-border: #e5e7ec;
+  --color-border-strong: #d3d6e0;
+
+  --color-text-primary: #14161d;
+  --color-text-secondary: #565b6d;
+  --color-text-tertiary: #8b8f9f;
+  --color-text-inverse: #f4f5f8;
+
+  /* Brand accent — brass/amber, warm counterpoint to cool neutrals */
+  --color-accent-50: #fdf8ef;
+  --color-accent-100: #fbecd4;
+  --color-accent-300: #e3ac5c;
+  --color-accent-500: #c8862a;
+  --color-accent-600: #ab6f1e;
+  --color-accent-700: #8a5817;
+
+  /* Status palette — distinct per application stage */
+  --color-status-applied-text: #565b6d;
+  --color-status-applied-bg: #eef0f3;
+
+  --color-status-screening-text: #2456c9;
+  --color-status-screening-bg: #e9f0fe;
+
+  --color-status-interview-text: #7141d6;
+  --color-status-interview-bg: #f2ecfc;
+
+  --color-status-technical-text: #0e7f95;
+  --color-status-technical-bg: #e4f6f9;
+
+  --color-status-offer-text: #16803d;
+  --color-status-offer-bg: #e6f7ec;
+
+  --color-status-rejected-text: #c22b2b;
+  --color-status-rejected-bg: #fbeaea;
+
+  --color-status-withdrawn-text: #78716c;
+  --color-status-withdrawn-bg: #f2f0ee;
+
+  /* Score bands — Job Match recommendation scale */
+  --color-score-excellent-text: #16803d;
+  --color-score-excellent-bg: #e6f7ec;
+
+  --color-score-strong-text: #0e7f95;
+  --color-score-strong-bg: #e4f6f9;
+
+  --color-score-moderate-text: #ab6f1e;
+  --color-score-moderate-bg: #fbecd4;
+
+  --color-score-weak-text: #b45309;
+  --color-score-weak-bg: #fef1e0;
+
+  --color-score-poor-text: #c22b2b;
+  --color-score-poor-bg: #fbeaea;
+
+  --color-danger: #c22b2b;
+  --color-success: #16803d;
+
+  --radius-card: 0.625rem;
+  --radius-control: 0.5rem;
+
+  --shadow-panel: 0 1px 2px rgba(15, 17, 24, 0.04), 0 8px 24px -8px rgba(15, 17, 24, 0.10);
+  --shadow-popover: 0 4px 12px rgba(15, 17, 24, 0.08), 0 16px 40px -12px rgba(15, 17, 24, 0.18);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+
+  ::selection {
+    background: var(--color-accent-100);
+    color: var(--color-accent-700);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
