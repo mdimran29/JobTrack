@@ -30,6 +30,23 @@ export const coverLetterSchema = z.object({
   params: z.object({}).optional(),
 });
 
+export const latexSchema = z.object({
+  body: z.object({
+    latex: z.string().min(100).max(100000),
+    missingSkills: z.array(z.string().min(1).max(80)).min(1).max(20),
+    jobTitle: z.string().min(1).max(200),
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
+export const latexPdfSchema = z.object({
+  body: z.object({ latex: z.string().min(100).max(100000) }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
 export type BulletInput = z.infer<typeof bulletSchema>['body'];
 export type SummaryInput = Omit<z.infer<typeof summarySchema>['body'], 'resumeText'> & { resumeText: string };
 export type CoverLetterInput = Omit<z.infer<typeof coverLetterSchema>['body'], 'resumeText'> & { resumeText: string };
+export type LatexInput = z.infer<typeof latexSchema>['body'];

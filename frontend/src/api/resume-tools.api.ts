@@ -9,6 +9,12 @@ export interface AtsResult {
   recommendations: string[];
 }
 
+export interface BulletResult {
+  originalBullet: string;
+  rewrittenBullet: string;
+  rationale: string;
+}
+
 const appendJob = (form: FormData, companyName: string, jobTitle: string, jobDescription: string) => {
   form.append('companyName', companyName);
   form.append('jobTitle', jobTitle);
@@ -16,6 +22,22 @@ const appendJob = (form: FormData, companyName: string, jobTitle: string, jobDes
 };
 
 export const resumeToolsApi = {
+  async addMissingSkills(latex: string, missingSkills: string[], jobTitle: string) {
+    const { data } = await api.post<{ data: { latex: string; addedSkills: string[] } }>('/resume-tools/add-missing-skills', {
+      latex, missingSkills, jobTitle,
+    });
+    return data.data;
+  },
+  async latexPdf(latex: string) {
+    const { data } = await api.post<Blob>('/resume-tools/latex-pdf', { latex }, { responseType: 'blob' });
+    return data;
+  },
+  async rewriteBullet(bullet: string, companyName: string, jobTitle: string, jobDescription: string) {
+    const { data } = await api.post<{ data: BulletResult }>('/resume-tools/rewrite-bullet', {
+      bullet, companyName, jobTitle, jobDescription,
+    });
+    return data.data;
+  },
   async ats(file: File, jobDescription: string) {
     const form = new FormData();
     form.append('resume', file);

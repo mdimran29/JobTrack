@@ -33,8 +33,24 @@ export interface JobMatchResult {
   recommendation: string;
 }
 
+const latexToResumeText = (source: string) => source
+  .replace(/%.*$/gm, '')
+  .replace(/\\(?:section|subsection|subsubsection)\*?\{([^{}]*)\}/g, '\n$1\n')
+  .replace(/\\(?:item|resumeItem)\s*(?:\{([^{}]*)\}|([^\n]+))/g, '\n$1$2')
+  .replace(/\\text(?:bf|it|tt)\{([^{}]*)\}/g, '$1')
+  .replace(/\\[a-zA-Z]+\*?(?:\[[^\]]*\])?/g, ' ')
+  .replace(/[{}]/g, '')
+  .replace(/\\/g, '')
+  .replace(/[ \t]+/g, ' ')
+  .replace(/\n\s*\n+/g, '\n')
+  .trim();
+
 export const extractResumeText = async (file: Express.Multer.File): Promise<string> => {
   try {
+    if (file.originalname.toLowerCase().endsWith('.tex')) {
+      return latexToResumeText(file.buffer.toString('utf8')).trim();
+    }
+
     if (file.mimetype === 'text/plain' || file.originalname.toLowerCase().endsWith('.txt')) {
       return file.buffer.toString('utf8').trim();
     }
@@ -69,7 +85,15 @@ export const jobMatchService = {
       resumeText: input.resumeText,
     });
 
-    const candidateSkills = input.resumeText ? extraction.candidateSkills : user.skills;
+    const resumeSkillText = input.resumeText?.toLowerCase() ?? '';
+    const explicitlyListedResumeSkills = input.resumeText
+      ? [...extraction.requiredSkills, ...extraction.preferredSkills].filter((skill) =>
+          resumeSkillText.includes(skill.toLowerCase())
+        )
+      : [];
+    const candidateSkills = input.resumeText
+      ? [...new Set([...extraction.candidateSkills, ...explicitlyListedResumeSkills])]
+      : user.skills;
     const candidateExperienceYears = input.resumeText
       ? extraction.candidateExperienceYears
       : user.yearsOfExperience;

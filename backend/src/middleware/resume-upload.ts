@@ -8,11 +8,12 @@ const resumeUpload = multer({
   fileFilter: (_req, file, callback) => {
     const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
     const isText = file.mimetype === 'text/plain' || file.originalname.toLowerCase().endsWith('.txt');
-    if (isPdf || isText) {
+    const isLatex = file.originalname.toLowerCase().endsWith('.tex');
+    if (isPdf || isText || isLatex) {
       callback(null, true);
       return;
     }
-    callback(new AppError(400, 'Upload a PDF or TXT resume.', 'INVALID_FILE_TYPE'));
+    callback(new AppError(400, 'Upload a PDF, TXT, or LaTeX (.tex) resume.', 'INVALID_FILE_TYPE'));
   },
 });
 

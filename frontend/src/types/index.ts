@@ -68,11 +68,14 @@ export interface JobApplication {
   salaryMax: number | null;
   source: string | null;
   followUpDate: string | null;
+  resumeVersionId: string | null;
+  matchScore: number | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface JobApplicationDetail extends JobApplication {
+  resumeVersion: { id: string; name: string } | null;
   interviews: Interview[];
   notes: Note[];
 }

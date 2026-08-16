@@ -17,6 +17,8 @@ export interface ApplicationInput {
   salaryMax?: number;
   source?: string;
   followUpDate?: string;
+  resumeVersionId?: string;
+  matchScore?: number;
 }
 
 export const applicationsApi = {

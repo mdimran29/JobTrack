@@ -193,6 +193,18 @@ export const ApplicationDetailPage = () => {
                   <span className="font-mono text-text-primary">{formatDate(application.followUpDate)}</span>
                 </div>
               )}
+              {application.matchScore !== null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-text-tertiary">Match score</span>
+                  <span className="font-mono text-text-primary">{application.matchScore}%</span>
+                </div>
+              )}
+              {application.resumeVersion && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-text-tertiary">Resume version</span>
+                  <span className="truncate text-right text-text-primary">{application.resumeVersion.name}</span>
+                </div>
+              )}
               {application.jobUrl && (
                 <a
                   href={application.jobUrl}

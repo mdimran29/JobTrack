@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Textarea } from '../components/ui/Textarea';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ProfileSkillsPanel } from '../components/job-match/ProfileSkillsPanel';
@@ -34,6 +35,9 @@ export const JobMatchPage = () => {
   const [generatedSummary, setGeneratedSummary] = useState<string | null>(null);
   const [generatedCoverLetter, setGeneratedCoverLetter] = useState<string | null>(null);
   const [toolLoading, setToolLoading] = useState<string | null>(null);
+  const [bullet, setBullet] = useState('');
+  const [rewrittenBullet, setRewrittenBullet] = useState<string | null>(null);
+  const [updatedLatex, setUpdatedLatex] = useState<string | null>(null);
 
   const handleSubmit = (values: JobMatchFormValues & { resumeFile?: File }) => {
     setLastValues(values);
@@ -64,6 +68,68 @@ export const JobMatchPage = () => {
               <JobMatchForm onSubmit={handleSubmit} isSubmitting={isPending} />
             </CardBody>
           </Card>
+
+          {data && lastValues?.resumeFile?.name.toLowerCase().endsWith('.tex') && (
+            <Card>
+              <CardBody className="space-y-3">
+                <div>
+                  <p className="font-display text-[15px] font-semibold text-text-primary">Update your LaTeX resume</p>
+                  <p className="mt-1 text-[13px] text-text-secondary">
+                    Add missing job skills to the matching resume section, then choose a download format.
+                  </p>
+                </div>
+                {!updatedLatex ? (
+                  <Button
+                    size="sm"
+                    isLoading={toolLoading === 'latex'}
+                    disabled={data.missingSkills.length === 0 && data.preferredSkillsMissing.length === 0}
+                    onClick={() => runTool('latex', async () => {
+                      const latex = await lastValues.resumeFile!.text();
+                      const skillsToAdd = [...new Set([...data.missingSkills, ...data.preferredSkillsMissing])];
+                      const result = await resumeToolsApi.addMissingSkills(latex, skillsToAdd, lastValues.jobTitle);
+                      setUpdatedLatex(result.latex);
+                    })}
+                  >
+                    {data.missingSkills.length > 0 || data.preferredSkillsMissing.length > 0 ? 'Add missing skills' : 'No missing skills'}
+                  </Button>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        const blob = new Blob([updatedLatex], { type: 'application/x-tex' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${lastValues.jobTitle.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-updated.tex`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      Download LaTeX
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      isLoading={toolLoading === 'latex-pdf'}
+                      onClick={() => runTool('latex-pdf', async () => {
+                        const pdf = await resumeToolsApi.latexPdf(updatedLatex);
+                        const url = URL.createObjectURL(pdf);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${lastValues.jobTitle.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-updated.pdf`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                      })}
+                    >
+                      Download PDF
+                    </Button>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          )}
         </div>
 
         <div>
@@ -256,6 +322,27 @@ export const JobMatchPage = () => {
                         Generate cover letter
                       </Button>
                     </div>
+                    <div className="space-y-2">
+                      <label htmlFor="resume-bullet" className="text-[12px] font-medium text-text-secondary">
+                        Rewrite one resume bullet for this job
+                      </label>
+                      <Textarea
+                        id="resume-bullet"
+                        rows={3}
+                        value={bullet}
+                        onChange={(event) => setBullet(event.target.value)}
+                        placeholder="Paste one experience or project bullet…"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={bullet.trim().length < 10}
+                        isLoading={toolLoading === 'bullet'}
+                        onClick={() => runTool('bullet', async () => setRewrittenBullet((await resumeToolsApi.rewriteBullet(bullet, lastValues.companyName, lastValues.jobTitle, lastValues.jobDescription)).rewrittenBullet))}
+                      >
+                        Rewrite bullet
+                      </Button>
+                    </div>
                     {atsResult && (
                       <div className="space-y-2 rounded-[var(--radius-control)] bg-canvas p-3 text-[13px]">
                         <div className="flex items-center justify-between font-semibold">
@@ -266,6 +353,8 @@ export const JobMatchPage = () => {
                       </div>
                     )}
                     {generatedSummary && <div className="rounded-[var(--radius-control)] bg-canvas p-3 text-[13px] leading-6 text-text-secondary"><strong className="text-text-primary">Suggested summary:</strong> {generatedSummary}</div>}
+                    {rewrittenBullet && <div className="rounded-[var(--radius-control)] bg-canvas p-3 text-[13px] leading-6 text-text-secondary"><strong className="text-text-primary">Rewritten bullet:</strong> {rewrittenBullet}</div>}
+                    {updatedLatex && <p className="text-[12px] text-text-tertiary">Updated LaTeX resume generated and downloaded. The original file was not changed.</p>}
                     {generatedCoverLetter && <div className="whitespace-pre-line rounded-[var(--radius-control)] bg-canvas p-3 text-[13px] leading-6 text-text-secondary"><strong className="text-text-primary">Cover letter:</strong>{`\n${generatedCoverLetter}`}</div>}
                   </CardBody>
                 </Card>

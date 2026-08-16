@@ -3,7 +3,7 @@ import { authMiddleware } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import { handleResumeUpload } from '../../middleware/resume-upload';
 import { resumeToolsController } from './resume-tools.controller';
-import { atsSchema, bulletSchema, coverLetterSchema, summarySchema } from './resume-tools.schema';
+import { atsSchema, bulletSchema, coverLetterSchema, latexPdfSchema, latexSchema, summarySchema } from './resume-tools.schema';
 
 export const resumeToolsRouter = Router();
 resumeToolsRouter.use(authMiddleware);
@@ -11,3 +11,5 @@ resumeToolsRouter.post('/ats/analyze', handleResumeUpload, validate(atsSchema), 
 resumeToolsRouter.post('/rewrite-bullet', validate(bulletSchema), resumeToolsController.bullet);
 resumeToolsRouter.post('/summary', handleResumeUpload, validate(summarySchema), resumeToolsController.summary);
 resumeToolsRouter.post('/cover-letter', handleResumeUpload, validate(coverLetterSchema), resumeToolsController.coverLetter);
+resumeToolsRouter.post('/add-missing-skills', validate(latexSchema), resumeToolsController.latex);
+resumeToolsRouter.post('/latex-pdf', validate(latexPdfSchema), resumeToolsController.latexPdf);

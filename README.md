@@ -1,0 +1,179 @@
+# JobTrack
+
+JobTrack is a full-stack job application tracker with resume analysis and job-specific resume tools. It helps candidates track applications, compare a resume with a job description, identify gaps, and prepare tailored application materials.
+
+## Features
+
+### Application Tracking
+
+- Application pipeline with statuses from applied through offer, rejected, or withdrawn.
+- Application details with interviews, notes, follow-up dates, salary, source, and job URL.
+- Dashboard statistics and recent activity.
+- Match score and selected resume version can be attached to an application.
+
+### Resume Analysis
+
+- Upload PDF, TXT, or LaTeX `.tex` resumes.
+- Extract candidate skills, current role, experience, projects, and strengths.
+- Compare required and preferred skills with the job description.
+- Calculate skills, preferred-skills, experience, and overall match scores.
+- Show missing skills, experience gaps, project suggestions, and resume improvements.
+- Use deterministic local matching when the AI provider is unavailable, so analysis can still return a result.
+
+### Resume Tools
+
+- ATS compatibility analysis.
+- Job-specific resume summary generation.
+- Resume bullet rewriting.
+- Tailored cover-letter generation.
+- Add missing skills to an existing LaTeX resume section.
+- Download the updated LaTeX source.
+- Compile and download the updated resume as a PDF.
+- Save multiple resume versions and review match history.
+
+## Architecture
+
+```text
+JobTrack/
+├── backend/       Express, TypeScript, Prisma, PostgreSQL, Gemini API
+├── frontend/      React, TypeScript, Vite, Tailwind CSS
+└── docs/          Design specifications and implementation plans
+```
+
+The frontend communicates with the backend through authenticated HTTP requests. Resume files are processed in memory and are not permanently stored by the upload endpoint. Resume versions saved from the UI are stored in PostgreSQL.
+
+## Requirements
+
+- Node.js 20 or newer.
+- PostgreSQL 16 or newer.
+- A Gemini API key for AI-powered analysis and generation.
+- `pdflatex` and the required TeX packages for PDF export from LaTeX resumes.
+
+On Debian or Ubuntu, install the LaTeX compiler with:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y texlive-latex-base texlive-latex-extra
+```
+
+## Setup
+
+### 1. Start PostgreSQL
+
+Docker Compose is provided for local development:
+
+```bash
+cd backend
+docker compose up -d postgres
+```
+
+### 2. Configure the backend
+
+Create `backend/.env` from `backend/.env.example` and set a real Gemini API key:
+
+```env
+DATABASE_URL="postgresql://jobtrack:jobtrack@localhost:5432/jobtrack?schema=public"
+JWT_SECRET="use-a-long-random-secret"
+JWT_EXPIRES_IN="7d"
+PORT=4000
+NODE_ENV="development"
+CLIENT_ORIGIN="http://localhost:5173"
+GEMINI_API_KEY="your-gemini-api-key"
+GEMINI_MODEL="gemini-3.1-flash-lite"
+```
+
+Do not commit `.env` files or API keys.
+
+### 3. Install and initialize the backend
+
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run prisma:deploy
+npm run prisma:seed
+```
+
+The seed creates a demo account:
+
+```text
+Email: demo@jobtrack.dev
+Password: password123
+```
+
+### 4. Install and start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Start the backend in another terminal:
+
+```bash
+cd backend
+npm run dev
+```
+
+The frontend runs at `http://localhost:5173` and the API runs at `http://localhost:4000`.
+
+## Resume Workflow
+
+1. Open **Job Match**.
+2. Enter the company, role, and job description.
+3. Upload a PDF, TXT, or `.tex` resume.
+4. Run the analysis.
+5. Review the holistic resume overview, match score, missing skills, experience gaps, and recommendations.
+6. For a LaTeX source resume, use **Add missing skills**.
+7. Download either the updated `.tex` file or the compiled PDF.
+
+LaTeX source is required to preserve the original LaTeX structure. A PDF cannot be converted back into its original LaTeX source reliably.
+
+## Main API Areas
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/applications`
+- `POST /api/applications`
+- `POST /api/job-match/analyze`
+- `GET /api/resumes`
+- `POST /api/resumes`
+- `GET /api/resumes/matches`
+- `POST /api/resume-tools/ats/analyze`
+- `POST /api/resume-tools/rewrite-bullet`
+- `POST /api/resume-tools/summary`
+- `POST /api/resume-tools/cover-letter`
+- `POST /api/resume-tools/add-missing-skills`
+- `POST /api/resume-tools/latex-pdf`
+
+All application, resume, match, and resume-tool endpoints require authentication.
+
+## Verification
+
+Backend:
+
+```bash
+cd backend
+npm run build
+npm run typecheck
+npx prisma validate
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run build
+npm run lint
+```
+
+The frontend lint command may report existing Fast Refresh warnings in shared context and toast files.
+
+## Security Notes
+
+- Resume uploads are held in memory and limited to 5 MB.
+- Only PDF, TXT, and `.tex` uploads are accepted.
+- LaTeX compilation uses `-no-shell-escape` and a temporary directory.
+- User-owned resume versions and match history are protected by authenticated ownership checks.
+- Never commit Gemini keys, JWT secrets, database passwords, or other credentials.

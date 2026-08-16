@@ -2,6 +2,7 @@ import { AppError } from '../../common/AppError';
 import { parsePagination, buildMeta } from '../../common/pagination';
 import { applicationsRepository } from './applications.repository';
 import { CreateApplicationInput, ListApplicationsQuery, UpdateApplicationInput } from './applications.schema';
+import { resumesService } from '../resumes/resumes.service';
 
 export const applicationsService = {
   async list(userId: string, query: ListApplicationsQuery) {
@@ -29,6 +30,7 @@ export const applicationsService = {
   },
 
   async create(userId: string, input: CreateApplicationInput) {
+    if (input.resumeVersionId) await resumesService.getById(input.resumeVersionId, userId);
     return applicationsRepository.create(userId, input);
   },
 
@@ -37,6 +39,7 @@ export const applicationsService = {
     if (!existing) {
       throw new AppError(404, 'Application not found');
     }
+    if (input.resumeVersionId) await resumesService.getById(input.resumeVersionId, userId);
     return applicationsRepository.updateById(id, input);
   },
 

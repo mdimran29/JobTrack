@@ -56,6 +56,7 @@ model ResumeVersion {
 
   name      String
   content   String
+  applications JobApplication[]
   matchHistory MatchHistory[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -95,6 +96,9 @@ model JobApplication {
   salaryMax    Int?
   source       String?
   followUpDate DateTime?
+  resumeVersionId String?
+  resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+  matchScore      Int?
 
   interviews Interview[]
   notes      Note[]
@@ -105,6 +109,7 @@ model JobApplication {
   @@index([userId, status])
   @@index([userId, followUpDate])
   @@index([userId, appliedDate])
+  @@index([resumeVersionId])
 }
 
 model Interview {

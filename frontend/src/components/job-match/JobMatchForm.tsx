@@ -63,7 +63,7 @@ export const JobMatchForm = ({ onSubmit, isSubmitting }: JobMatchFormProps) => {
           {...register('jobDescription')}
         />
       </Field>
-      <Field label="Resume" htmlFor="resumeFile" hint="Optional: PDF or TXT, up to 5 MB">
+      <Field label="Resume" htmlFor="resumeFile" hint="Optional: PDF, TXT, or LaTeX source (.tex), up to 5 MB">
         <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-control)] border border-dashed border-border-strong bg-canvas px-4 py-3 transition hover:border-accent-500">
           <span className="min-w-0 truncate text-[13px] text-text-secondary">
             {resumeFile ? resumeFile.name : 'Choose your resume file'}
@@ -74,15 +74,15 @@ export const JobMatchForm = ({ onSubmit, isSubmitting }: JobMatchFormProps) => {
           <input
             id="resumeFile"
             type="file"
-            accept="application/pdf,.pdf,text/plain,.txt"
+            accept="application/pdf,.pdf,text/plain,.txt,.tex"
             className="sr-only"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file && file.size <= 5 * 1024 * 1024 && (file.type === 'application/pdf' || file.type === 'text/plain' || /\.(pdf|txt)$/i.test(file.name))) {
+              if (file && file.size <= 5 * 1024 * 1024 && (file.type === 'application/pdf' || file.type === 'text/plain' || /\.(pdf|txt|tex)$/i.test(file.name))) {
                 setResumeFile(file);
               } else {
                 setResumeFile(undefined);
-                show('Choose a PDF or TXT resume smaller than 5 MB', 'error');
+                show('Choose a PDF, TXT, or LaTeX resume smaller than 5 MB', 'error');
                 event.target.value = '';
               }
             }}

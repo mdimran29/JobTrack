@@ -14,6 +14,7 @@ export interface ListApplicationsFilters {
 const detailInclude = {
   interviews: { orderBy: { scheduledAt: Prisma.SortOrder.desc } },
   notes: { orderBy: { createdAt: Prisma.SortOrder.desc } },
+  resumeVersion: { select: { id: true, name: true } },
 } satisfies Prisma.JobApplicationInclude;
 
 export const applicationsRepository = {

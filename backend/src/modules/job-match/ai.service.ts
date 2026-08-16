@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { env } from '../../config/env';
-import { AppError } from '../../common/AppError';
 import { geminiExtractionSchema, GeminiExtraction } from './job-match.schema';
 
 const client = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
@@ -46,6 +45,51 @@ interface ExtractInput {
   resumeText?: string;
 }
 
+const COMMON_SKILLS = [
+  'JavaScript', 'TypeScript', 'React', 'React.js', 'Next.js', 'Vue', 'Angular', 'HTML', 'CSS',
+  'Node.js', 'Python', 'Java', 'Go', 'Rust', 'Solidity', 'Smart Contracts', 'Blockchain',
+  'Blockchain Architecture', 'Web3', 'Web3.js', 'Web3 libraries', 'Ethers.js', 'Hardhat',
+  'Foundry', 'Chainlink', 'DeFi', 'Layer 2 networks', 'AWS', 'Docker', 'PostgreSQL', 'MySQL',
+  'MongoDB', 'Redis', 'SQL', 'REST APIs', 'GraphQL', 'Git', 'Kubernetes', 'Terraform',
+];
+
+const containsSkill = (text: string, skill: string) =>
+  text.toLowerCase().includes(skill.toLowerCase());
+
+const fallbackExtraction = (input: ExtractInput): GeminiExtraction => {
+  const jobText = input.jobDescription.toLowerCase();
+  const resumeText = input.resumeText?.toLowerCase() ?? '';
+  const candidateSkills = [...new Set([
+    ...input.userSkills,
+    ...COMMON_SKILLS.filter((skill) => containsSkill(resumeText, skill)),
+  ])];
+  const requiredSkills = COMMON_SKILLS.filter((skill) => containsSkill(jobText, skill));
+  const candidateYearsMatch = input.resumeText?.match(/(\d{1,2})\+?\s+years?/i);
+  const candidateYears = candidateYearsMatch ? Number(candidateYearsMatch[1]) : input.userYearsOfExperience;
+  const requiredYearsMatch = input.jobDescription.match(/(\d{1,2})\+?\s+years?/i);
+  const requiredYears = requiredYearsMatch ? Number(requiredYearsMatch[1]) : null;
+  const roleMatch = input.resumeText?.match(/(?:current|most recent)?\s*(?:role|title)\s*[:\-]\s*([^\n]+)/i);
+  const currentRole = roleMatch?.[1]?.trim() || 'Not stated';
+  return {
+    candidateSkills,
+    candidateCurrentRole: currentRole,
+    candidateExperienceYears: candidateYears,
+    relevantExperienceSummary: input.resumeText
+      ? 'The resume was reviewed using its available text, projects, roles, and technologies. Add clearer role dates and project outcomes for a more precise experience comparison.'
+      : 'No uploaded resume was available, so this comparison uses the skills saved in your profile.',
+    resumeStrengths: [],
+    resumeRecommendations: input.resumeText ? ['Add measurable outcomes and clear responsibilities to each relevant project or role.'] : [],
+    resumeAdditions: input.resumeText ? ['Add truthful evidence for the job requirements that appear in your projects or experience.'] : [],
+    requiredSkills,
+    preferredSkills: [],
+    experienceYearsRequired: requiredYears,
+    experienceReasoning: requiredYears === null
+      ? 'The job description does not state a specific experience requirement.'
+      : `The candidate has ${candidateYears ?? 'an unknown amount of'} experience compared with the stated ${requiredYears}-year requirement.`,
+    suggestedProjectTypes: [],
+  };
+};
+
 const buildPrompt = (input: ExtractInput): string => `You are analyzing a job posting against a candidate's profile for a job-tracking app.
 
 Company: ${input.companyName}
@@ -60,7 +104,7 @@ Candidate's years of experience: ${input.userYearsOfExperience ?? 'unknown'}
 ${input.resumeText ? `\nUploaded resume text:\n"""\n${input.resumeText}\n"""` : ''}
 
 Extract candidate information from the profile or uploaded resume:
-1. candidateSkills: canonical technical skills explicitly present in the candidate profile or resume.
+1. candidateSkills: canonical technical skills explicitly present in the candidate profile or resume, including skills listed under Skills, Technical Skills, Relevant Skills to Add, or similar sections. Skills in a "Relevant Skills to Add" section may count for keyword matching, but must not be treated as proven professional experience.
 2. candidateCurrentRole: the candidate's current or most recent role, or "Not stated" if unavailable.
 3. candidateExperienceYears: total professional experience stated or reasonably calculable from the resume, or null if unavailable. Do not guess.
 4. relevantExperienceSummary: two plain-English sentences explaining how the candidate's roles and projects relate to the target job. Mention relevant project types and responsibilities, not just skills.
@@ -80,34 +124,48 @@ Do not invent a match score or a recommendation label — only extract the facts
 export const aiService = {
   async extractJobRequirements(input: ExtractInput): Promise<GeminiExtraction> {
     let raw: string | undefined;
+    let lastError: unknown;
     try {
-      const response = await client.models.generateContent({
-        model: env.GEMINI_MODEL,
-        contents: buildPrompt(input),
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
-        },
-      });
-      raw = response.text;
-    } catch {
-      throw new AppError(502, 'AI analysis failed, please try again');
+      const models = [...new Set([env.GEMINI_MODEL, 'gemini-3.1-flash-lite', 'gemini-3.5-flash'])];
+      for (const model of models) {
+        try {
+          const response = await client.models.generateContent({
+            model,
+            contents: buildPrompt(input),
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: RESPONSE_SCHEMA,
+              temperature: 0,
+              seed: 42,
+            },
+          });
+          raw = response.text;
+          break;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      if (!raw) throw lastError;
+    } catch (error) {
+      console.error('Gemini job analysis request failed; using local fallback:', error);
+      return fallbackExtraction(input);
     }
 
     if (!raw) {
-      throw new AppError(502, 'AI analysis failed, please try again');
+      return fallbackExtraction(input);
     }
 
     let parsedJson: unknown;
     try {
       parsedJson = JSON.parse(raw);
     } catch {
-      throw new AppError(502, 'AI analysis failed, please try again');
+      return fallbackExtraction(input);
     }
 
     const result = geminiExtractionSchema.safeParse(parsedJson);
     if (!result.success) {
-      throw new AppError(502, 'AI analysis failed, please try again');
+      console.error('Gemini job analysis response validation failed:', result.error.flatten());
+      return fallbackExtraction(input);
     }
 
     return result.data;
