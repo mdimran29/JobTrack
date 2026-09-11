@@ -11,6 +11,13 @@ JobTrack is a full-stack job application tracker with resume analysis and job-sp
 - Dashboard statistics and recent activity.
 - Match score and selected resume version can be attached to an application.
 
+### Job Search
+
+- Search live Indian Adzuna listings by keyword and Indian location.
+- View company, location, salary, contract, category, and posting details.
+- Add a search result directly to the application tracker.
+- Provider credentials stay on the backend and are never exposed to the browser.
+
 ### Resume Analysis
 
 - Upload PDF, TXT, or LaTeX `.tex` resumes.
@@ -137,6 +144,7 @@ LaTeX source is required to preserve the original LaTeX structure. A PDF cannot 
 - `GET /api/applications`
 - `POST /api/applications`
 - `POST /api/job-match/analyze`
+- `GET /api/job-search/search?keyword=...&location=...`
 - `GET /api/resumes`
 - `POST /api/resumes`
 - `GET /api/resumes/matches`
@@ -169,6 +177,50 @@ npm run lint
 ```
 
 The frontend lint command may report existing Fast Refresh warnings in shared context and toast files.
+
+## Deployment
+
+The repository includes deployment configuration for Render (API and PostgreSQL) and Vercel (frontend).
+
+### Backend on Render
+
+1. Create a new Render Blueprint from this repository and select `render.yaml`.
+2. Enter `GEMINI_API_KEY` and the optional job-search credentials when prompted.
+3. Deploy the blueprint. Render runs Prisma migrations during the first deploy with the command below.
+
+Set the backend service's build/start settings as follows if creating the service manually:
+
+```text
+Dockerfile: backend/Dockerfile
+Docker context: repository root
+Health check: /health
+```
+
+The container automatically runs migrations before starting the API. To apply migrations manually from the Render shell, use:
+
+```bash
+npx prisma migrate deploy
+```
+
+Set `CLIENT_ORIGIN` to the final Vercel URL, for example `https://jobtrack.vercel.app`.
+
+### Frontend on Vercel
+
+Create a Vercel project rooted at `frontend` with these settings:
+
+```text
+Build command: npm run build
+Output directory: dist
+Install command: npm ci
+```
+
+Set the Vercel environment variable `VITE_API_URL` to the Render API URL plus `/api`, for example:
+
+```text
+https://jobtrack-api.onrender.com/api
+```
+
+Redeploy the backend after the Vercel URL is known so its `CLIENT_ORIGIN` matches exactly. Do not expose `GEMINI_API_KEY`, database credentials, or JWT secrets in Vercel variables.
 
 ## Security Notes
 

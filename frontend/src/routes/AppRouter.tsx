@@ -10,6 +10,7 @@ import { FollowUpsPage } from '../pages/FollowUpsPage';
 import { JobMatchPage } from '../pages/JobMatchPage';
 import { ResumesPage } from '../pages/ResumesPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { JobSearchPage } from '../pages/JobSearchPage';
 
 export const AppRouter = () => (
   <Routes>
@@ -25,7 +26,8 @@ export const AppRouter = () => (
         <Route path="/applications/:id" element={<ApplicationDetailPage />} />
         <Route path="/follow-ups" element={<FollowUpsPage />} />
         <Route path="/job-match" element={<JobMatchPage />} />
-        <Route path="/resumes" element={<ResumesPage />} />
+          <Route path="/resumes" element={<ResumesPage />} />
+          <Route path="/job-search" element={<JobSearchPage />} />
       </Route>
     </Route>
 

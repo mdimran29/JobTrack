@@ -30,7 +30,15 @@ export const DashboardPage = () => {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Your job search, at a glance." />
+      <PageHeader
+        title="Dashboard"
+        description="Your job search, at a glance."
+        action={
+          <Link to="/job-search">
+            <Button size="sm" variant="secondary">Search jobs</Button>
+          </Link>
+        }
+      />
 
       {isLoading && <DashboardSkeleton />}
 

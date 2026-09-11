@@ -10,6 +10,9 @@ const envSchema = z.object({
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   GEMINI_API_KEY: z.string().min(1),
   GEMINI_MODEL: z.string().default('gemini-3.1-flash-lite'),
+  ADZUNA_APP_ID: z.string().optional(),
+  ADZUNA_APP_KEY: z.string().optional(),
+  RAPIDAPI_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

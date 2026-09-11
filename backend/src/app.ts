@@ -11,6 +11,7 @@ import { jobMatchRouter } from './modules/job-match/job-match.routes';
 import { resumesRouter } from './modules/resumes/resumes.routes';
 import { resumeToolsRouter } from './modules/resume-tools/resume-tools.routes';
 import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
+import { jobSearchRouter } from './modules/job-search/job-search.routes';
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/job-match', jobMatchRouter);
 app.use('/api/resumes', resumesRouter);
 app.use('/api/resume-tools', resumeToolsRouter);
+app.use('/api/job-search', jobSearchRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

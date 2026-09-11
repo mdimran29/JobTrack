@@ -49,6 +49,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    to: '/job-search',
+    label: 'Job Search',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+        <circle cx="7.3" cy="7.3" r="4.4" stroke="currentColor" strokeWidth="1.4" />
+        <path d="m10.5 10.5 3.2 3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: '/resumes',
     label: 'Resumes',
     icon: (
