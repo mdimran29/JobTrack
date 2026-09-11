@@ -79,8 +79,9 @@ export const jobSearchService = {
     let payload: AdzunaResponse;
     try {
       payload = await requestJson(`https://api.adzuna.com/v1/api/jobs/in/search/${query.page}?${params}`);
-    } catch {
-      throw new AppError(502, 'The job search provider timed out. Try again shortly.', 'JOB_SEARCH_PROVIDER_FAILED');
+    } catch (error) {
+      console.error('Adzuna job search request failed:', error);
+      throw new AppError(502, 'The job search provider is unavailable right now. Try again shortly.', 'JOB_SEARCH_PROVIDER_FAILED');
     }
     const data: JobSearchResult[] = (payload.results ?? []).map((job, index) => ({
       id: job.id ?? `${query.page}-${index}-${job.title ?? 'job'}`,

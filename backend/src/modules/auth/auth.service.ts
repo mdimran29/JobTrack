@@ -7,6 +7,10 @@ import { LoginInput, RegisterInput, UpdateProfileInput } from './auth.schema';
 
 const PASSWORD_SALT_ROUNDS = 12;
 
+// Compared against when the email is unknown, so a failed login takes the same time
+// whether or not the account exists (prevents timing-based user enumeration).
+const DUMMY_HASH_PROMISE = bcrypt.hash('jobtrack-timing-equalizer', PASSWORD_SALT_ROUNDS);
+
 const toPublicUser = (user: {
   id: string;
   email: string;
@@ -22,7 +26,10 @@ const toPublicUser = (user: {
 });
 
 const signToken = (userId: string) =>
-  jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
+  jwt.sign({ sub: userId }, env.JWT_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: env.JWT_EXPIRES_IN,
+  } as jwt.SignOptions);
 
 export const authService = {
   async register(input: RegisterInput) {
@@ -41,12 +48,11 @@ export const authService = {
 
   async login(input: LoginInput) {
     const user = await prisma.user.findUnique({ where: { email: input.email } });
-    if (!user) {
-      throw new AppError(401, 'Invalid email or password');
-    }
-
-    const passwordMatches = await bcrypt.compare(input.password, user.passwordHash);
-    if (!passwordMatches) {
+    const passwordMatches = await bcrypt.compare(
+      input.password,
+      user?.passwordHash ?? (await DUMMY_HASH_PROMISE)
+    );
+    if (!user || !passwordMatches) {
       throw new AppError(401, 'Invalid email or password');
     }
 

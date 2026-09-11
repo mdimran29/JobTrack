@@ -45,23 +45,43 @@ const latexToResumeText = (source: string) => source
   .replace(/\n\s*\n+/g, '\n')
   .trim();
 
-export const extractResumeText = async (file: Express.Multer.File): Promise<string> => {
+const MIN_RESUME_TEXT_LENGTH = 50;
+const MAX_RESUME_TEXT_LENGTH = 50000;
+
+const readResumeText = async (file: Express.Multer.File): Promise<string> => {
+  const name = file.originalname.toLowerCase();
+  if (name.endsWith('.tex')) {
+    return latexToResumeText(file.buffer.toString('utf8'));
+  }
+  if (file.mimetype === 'text/plain' || name.endsWith('.txt')) {
+    return file.buffer.toString('utf8');
+  }
+  const parser = new PDFParse({ data: file.buffer });
   try {
-    if (file.originalname.toLowerCase().endsWith('.tex')) {
-      return latexToResumeText(file.buffer.toString('utf8')).trim();
-    }
-
-    if (file.mimetype === 'text/plain' || file.originalname.toLowerCase().endsWith('.txt')) {
-      return file.buffer.toString('utf8').trim();
-    }
-
-    const parser = new PDFParse({ data: file.buffer });
     const result = await parser.getText();
+    return result.text;
+  } finally {
     await parser.destroy();
-    return result.text.trim();
+  }
+};
+
+export const extractResumeText = async (file: Express.Multer.File): Promise<string> => {
+  let text: string;
+  try {
+    text = (await readResumeText(file)).trim();
   } catch {
     throw new AppError(400, 'Could not read that resume. Upload a text-based PDF or TXT file.', 'INVALID_RESUME');
   }
+
+  // Scanned/image-only PDFs parse "successfully" but yield nothing usable.
+  if (text.length < MIN_RESUME_TEXT_LENGTH) {
+    throw new AppError(
+      400,
+      'No readable text was found in that resume. Upload a text-based PDF, TXT, or .tex file.',
+      'EMPTY_RESUME'
+    );
+  }
+  return text.slice(0, MAX_RESUME_TEXT_LENGTH);
 };
 
 export const jobMatchService = {

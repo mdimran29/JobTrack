@@ -1,8 +1,9 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const ProtectedRoute = () => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -13,7 +14,8 @@ export const ProtectedRoute = () => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Remember where the user was heading so LoginPage can send them back after sign-in.
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
 
   return <Outlet />;

@@ -165,11 +165,36 @@ export const resumeToolsService = {
     try {
       await writeFile(sourcePath, latex, 'utf8');
       try {
-        await execFileAsync('pdflatex', ['-interaction=nonstopmode', '-halt-on-error', '-no-shell-escape', '-output-directory', directory, sourcePath], { timeout: 30000 });
+        // The LaTeX source is untrusted user input. pdflatex can \input and \openout arbitrary
+        // paths, so run it with a minimal environment (no API keys / DB URL to read back via
+        // /proc/self/environ), and TeX Live's "paranoid" file-access mode which confines reads
+        // and writes to the working directory tree. Shell escape is disabled separately.
+        await execFileAsync(
+          'pdflatex',
+          ['-interaction=nonstopmode', '-halt-on-error', '-no-shell-escape', '-output-directory', directory, 'resume.tex'],
+          {
+            cwd: directory,
+            timeout: 30000,
+            maxBuffer: 4 * 1024 * 1024,
+            env: {
+              PATH: process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin',
+              HOME: directory,
+              TEXMFOUTPUT: directory,
+              TEXMFVAR: `${directory}/texmf-var`,
+              TEXMFCONFIG: `${directory}/texmf-config`,
+              openin_any: 'p',
+              openout_any: 'p',
+              shell_escape: 'f',
+            },
+          }
+        );
       } catch (error) {
-        const compilerError = error as { code?: string; stderr?: string };
+        const compilerError = error as { code?: string; killed?: boolean; stderr?: string };
         if (compilerError.code === 'ENOENT') {
           throw new AppError(503, 'PDF export requires pdflatex to be installed on the backend.', 'LATEX_COMPILER_UNAVAILABLE');
+        }
+        if (compilerError.killed) {
+          throw new AppError(422, 'The LaTeX document took too long to compile and was stopped.', 'LATEX_COMPILE_TIMEOUT');
         }
         console.error('LaTeX compilation failed:', compilerError.stderr ?? error);
         throw new AppError(422, 'The updated LaTeX could not be compiled. Check the resume template packages and syntax.', 'LATEX_COMPILE_FAILED');

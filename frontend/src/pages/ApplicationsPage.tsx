@@ -74,14 +74,16 @@ export const ApplicationsPage = () => {
 
   const handleSubmit = async (values: ApplicationFormValues) => {
     setSubmitError(null);
+    // On edit, send null for emptied fields so the server clears them; on create, omit them.
+    const empty = editingApplication ? null : undefined;
     const payload = {
       ...values,
-      location: values.location || undefined,
-      jobUrl: values.jobUrl || undefined,
-      source: values.source || undefined,
-      followUpDate: values.followUpDate || undefined,
-      salaryMin: Number.isNaN(values.salaryMin) ? undefined : values.salaryMin,
-      salaryMax: Number.isNaN(values.salaryMax) ? undefined : values.salaryMax,
+      location: values.location || empty,
+      jobUrl: values.jobUrl || empty,
+      source: values.source || empty,
+      followUpDate: values.followUpDate || empty,
+      salaryMin: values.salaryMin === undefined || Number.isNaN(values.salaryMin) ? empty : values.salaryMin,
+      salaryMax: values.salaryMax === undefined || Number.isNaN(values.salaryMax) ? empty : values.salaryMax,
     };
 
     try {

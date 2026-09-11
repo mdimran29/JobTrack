@@ -4,10 +4,6 @@ import { env } from '../config/env';
 import { AppError } from '../common/AppError';
 import { AuthedRequest } from '../common/types';
 
-interface JwtPayload {
-  sub: string;
-}
-
 export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   const token = req.cookies?.token as string | undefined;
 
@@ -16,7 +12,11 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
   }
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+    // Pin the algorithm so a token signed with "none" or an asymmetric key can never verify.
+    const payload = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] });
+    if (typeof payload !== 'object' || typeof payload.sub !== 'string' || payload.sub.length === 0) {
+      throw new Error('Malformed token payload');
+    }
     (req as AuthedRequest).userId = payload.sub;
     next();
   } catch {

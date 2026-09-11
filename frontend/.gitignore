@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
+# Local environment files (keep the example committed)
+.env
+.env.*
+!.env.example

@@ -4,6 +4,11 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
+  // The demo account uses a well-known password; never create it on a production database.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_SEED !== 'true') {
+    throw new Error('Refusing to seed demo data in production. Set ALLOW_SEED=true to override.');
+  }
+
   const passwordHash = await bcrypt.hash('password123', 12);
 
   const user = await prisma.user.upsert({

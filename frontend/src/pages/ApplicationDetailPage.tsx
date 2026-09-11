@@ -234,14 +234,15 @@ export const ApplicationDetailPage = () => {
             try {
               await updateApplication.mutateAsync({
                 id: application.id,
+                // null clears a field on the server; undefined would leave the old value in place.
                 input: {
                   ...values,
-                  location: values.location || undefined,
-                  jobUrl: values.jobUrl || undefined,
-                  source: values.source || undefined,
-                  followUpDate: values.followUpDate || undefined,
-                  salaryMin: Number.isNaN(values.salaryMin) ? undefined : values.salaryMin,
-                  salaryMax: Number.isNaN(values.salaryMax) ? undefined : values.salaryMax,
+                  location: values.location || null,
+                  jobUrl: values.jobUrl || null,
+                  source: values.source || null,
+                  followUpDate: values.followUpDate || null,
+                  salaryMin: values.salaryMin === undefined || Number.isNaN(values.salaryMin) ? null : values.salaryMin,
+                  salaryMax: values.salaryMax === undefined || Number.isNaN(values.salaryMax) ? null : values.salaryMax,
                 },
               });
               show('Application updated');
@@ -283,11 +284,14 @@ export const ApplicationDetailPage = () => {
           onCancel={() => setInterviewFormOpen(false)}
           onSubmit={async (values) => {
             setInterviewSubmitError(null);
+            // On edit, send null for emptied fields so the server clears them; on create, omit them.
+            const empty = editingInterview ? null : undefined;
             const payload = {
               ...values,
-              interviewerName: values.interviewerName || undefined,
-              mode: values.mode || undefined,
-              durationMinutes: Number.isNaN(values.durationMinutes) ? undefined : values.durationMinutes,
+              interviewerName: values.interviewerName || empty,
+              mode: values.mode || empty,
+              durationMinutes:
+                values.durationMinutes === undefined || Number.isNaN(values.durationMinutes) ? empty : values.durationMinutes,
             };
             try {
               if (editingInterview) {

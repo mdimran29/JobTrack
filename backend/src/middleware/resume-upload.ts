@@ -2,13 +2,17 @@ import { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { AppError } from '../common/AppError';
 
+const MAX_RESUME_BYTES = 5 * 1024 * 1024;
+
 const resumeUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  // One file per request; keep field sizes in line with the JSON schemas so multipart can't bypass them.
+  limits: { fileSize: MAX_RESUME_BYTES, files: 1, fields: 10, fieldSize: 64 * 1024 },
   fileFilter: (_req, file, callback) => {
-    const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
-    const isText = file.mimetype === 'text/plain' || file.originalname.toLowerCase().endsWith('.txt');
-    const isLatex = file.originalname.toLowerCase().endsWith('.tex');
+    const name = file.originalname.toLowerCase();
+    const isPdf = file.mimetype === 'application/pdf' || name.endsWith('.pdf');
+    const isText = file.mimetype === 'text/plain' || name.endsWith('.txt');
+    const isLatex = name.endsWith('.tex');
     if (isPdf || isText || isLatex) {
       callback(null, true);
       return;

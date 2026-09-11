@@ -19,4 +19,7 @@ RUN npx prisma generate && npm run build
 ENV NODE_ENV=production
 EXPOSE 4000
 
+# Run as the unprivileged user that ships with the node image; pdflatex only needs /tmp.
+USER node
+
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

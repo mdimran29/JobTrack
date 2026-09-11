@@ -4,9 +4,9 @@ import { Interview } from '../types';
 export interface InterviewInput {
   type: string;
   scheduledAt: string;
-  durationMinutes?: number;
-  interviewerName?: string;
-  mode?: string;
+  durationMinutes?: number | null;
+  interviewerName?: string | null;
+  mode?: string | null;
   outcome?: string;
 }
 

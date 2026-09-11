@@ -6,19 +6,21 @@ import {
   PaginatedResponse,
 } from '../types';
 
+// Optional fields accept `null` on update so a cleared field is actually cleared on the server
+// (`undefined` is dropped from the JSON body and leaves the old value in place).
 export interface ApplicationInput {
   company: string;
   position: string;
   status: string;
   appliedDate: string;
-  jobUrl?: string;
-  location?: string;
-  salaryMin?: number;
-  salaryMax?: number;
-  source?: string;
-  followUpDate?: string;
-  resumeVersionId?: string;
-  matchScore?: number;
+  jobUrl?: string | null;
+  location?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  source?: string | null;
+  followUpDate?: string | null;
+  resumeVersionId?: string | null;
+  matchScore?: number | null;
 }
 
 export const applicationsApi = {

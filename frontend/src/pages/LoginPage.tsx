@@ -25,7 +25,9 @@ export const LoginPage = () => {
     setFormError(null);
     try {
       await login(values);
-      const redirectTo = (location.state as { from?: string } | null)?.from ?? '/dashboard';
+      const from = (location.state as { from?: string } | null)?.from;
+      // Only follow in-app paths; never redirect to another origin or a protocol-relative URL.
+      const redirectTo = from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setFormError(getErrorMessage(err, 'Invalid email or password'));

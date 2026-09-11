@@ -27,12 +27,26 @@ export const applicationSchema = z.object({
   ]),
   appliedDate: z.string().min(1, 'Applied date is required'),
   location: z.string().max(200).optional().or(z.literal('')),
-  jobUrl: z.string().url('Enter a valid URL').optional().or(z.literal('')),
+  jobUrl: z
+    .string()
+    .trim()
+    .url('Enter a valid URL')
+    .refine((value) => /^https?:\/\//i.test(value), 'Enter a link starting with http:// or https://')
+    .optional()
+    .or(z.literal('')),
   source: z.string().max(100).optional().or(z.literal('')),
   salaryMin: z.union([z.coerce.number().int().positive(), z.nan()]).optional(),
   salaryMax: z.union([z.coerce.number().int().positive(), z.nan()]).optional(),
   followUpDate: z.string().optional().or(z.literal('')),
-});
+}).refine(
+  (values) =>
+    values.salaryMin === undefined ||
+    values.salaryMax === undefined ||
+    Number.isNaN(values.salaryMin) ||
+    Number.isNaN(values.salaryMax) ||
+    values.salaryMin <= values.salaryMax,
+  { message: 'Salary max must be at least the salary min', path: ['salaryMax'] }
+);
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export const interviewSchema = z.object({
