@@ -10,7 +10,7 @@ const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const setAuthCookie = (res: Response, token: string) => {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
     secure: env.NODE_ENV === 'production',
     maxAge: COOKIE_MAX_AGE_MS,
   });
@@ -40,7 +40,11 @@ export const authController = {
   }),
 
   logout: asyncHandler(async (_req: Request, res: Response) => {
-    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: env.NODE_ENV === 'production',
+    });
     res.status(200).json({ data: { success: true } });
   }),
 };
